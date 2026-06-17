@@ -49,3 +49,25 @@ Surface-mounted DS18B20 probes are useful trend sensors, not replacements for th
 The firmware initializes a 128x64 SSD1306 OLED on the HALMET I2C bus at address `0x3c` with no reset pin. The display shows a boot page, then refreshes once per Signal K publish interval with RPM, engine state, D1-D3 warning states, SD20 seal alarm state, fuel, coolant, oil pressure, and the current Wi-Fi station or provisioning AP IP address.
 
 If the serial log reports `SSD1306 display not found; local display disabled`, check the I2C wiring, display power, and whether the module uses address `0x3d`.
+
+## Optional vibration sensor
+
+The optional vibration-monitoring subsystem uses a rigidly mounted 3-axis accelerometer or IMU on the engine block or crankcase. Use the existing I2C bus for the first implementation:
+
+| HALMET / ESP32 | Sensor breakout |
+| --- | --- |
+| 3.3 V | VIN or 3V3, depending on breakout |
+| GND | GND |
+| `GPIO21` SDA | SDA |
+| `GPIO22` SCL | SCL |
+| Optional verified free GPIO | INT / DRDY |
+
+Existing I2C devices use `0x3c` for the OLED and `0x4b` for the ADS1115. Typical accelerometer addresses such as `0x68`, `0x69`, `0x53`, or `0x1d` should not conflict, but always confirm with an I2C scan.
+
+Preferred sensor order is ICM-42688-P for a new permanent installation, ADXL345 for a simple accelerometer proof of concept, MPU-9250 if a legacy module is already available, and MPU-6050 for the cheapest I2C proof of concept. MPU-6050 and MPU-9250 are obsolete parts and should not be the preferred choice for a new permanent HALMET hardware revision.
+
+Mount the sensor to a rigid metal point on the engine block or crankcase, preferably around the middle cylinder area below the cylinder head and above the oil pan. Do not mount it on the HALMET enclosure, loose wiring, rubber mounts, hoses, exhaust parts, alternator brackets, valve cover, or thin guards for the baseline installation.
+
+Keep plain I2C cable runs short: target 20-30 cm, treat about 50 cm as the normal design maximum, and avoid plain I2C above about 1 m in the engine bay. For longer runs, use differential I2C, SPI where the sensor supports it, or a remote vibration node. Mount the IMU on the engine, but keep the HALMET enclosure off-engine on a nearby protected bulkhead or panel.
+
+See [vibration monitoring](vibration.md) for sensor selection, bus choice, cable length, shielding, mounting, axis convention, wiring, long-cable options, and FFT defaults.

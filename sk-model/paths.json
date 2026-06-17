@@ -18,6 +18,18 @@
   "electrical": {
     "alternator_temperature": "electrical.alternators.main.temperature"
   },
+  "halmet_vendor_extensions": {
+    "vibration_base": "halmet.yanmar3gm30f.vibration",
+    "vibration_acceleration_rms": "halmet.yanmar3gm30f.vibration.accelerationRms",
+    "vibration_peak_acceleration": "halmet.yanmar3gm30f.vibration.peakAcceleration",
+    "vibration_peak_frequency": "halmet.yanmar3gm30f.vibration.peakFrequency",
+    "vibration_crank_order_amplitude": "halmet.yanmar3gm30f.vibration.crankOrderAmplitude",
+    "vibration_firing_order_amplitude": "halmet.yanmar3gm30f.vibration.firingOrderAmplitude",
+    "vibration_sample_rate": "halmet.yanmar3gm30f.vibration.sampleRate",
+    "vibration_fft_size": "halmet.yanmar3gm30f.vibration.fftSize",
+    "vibration_status": "halmet.yanmar3gm30f.vibration.status",
+    "vibration_spectrum": "halmet.yanmar3gm30f.vibration.spectrum"
+  },
   "nmea2000": {
     "engine_rapid_update_pgn": 127488,
     "engine_dynamic_pgn": 127489,

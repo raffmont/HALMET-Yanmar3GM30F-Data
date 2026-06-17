@@ -12,6 +12,7 @@ SensESP provides onboarding, OTA, configuration, Signal K integration, and the c
 - 1-Wire DS18B20 temperature probes with deterministic path mapping by ROM ID or sensor order.
 - Local SSD1306 OLED status display with RPM, alarms, sensor values, and current Wi-Fi/AP IP address.
 - Schema-valid Signal K outputs with SI units.
+- Optional documented HALMET vendor paths for engine vibration metrics and reduced FFT spectrum diagnostics.
 - NMEA 2000 PGNs `127488`, `127489`, `127493`, and `127505`.
 - PlatformIO `halmet` default environment using pioarduino and SensESP.
 - Documentation split into getting-started, architecture, configuration, Signal K, NMEA 2000, hardware, safety, and commissioning files.
@@ -86,6 +87,8 @@ The project default environment is `halmet`.
 | Transmission oil/case temperature | `propulsion.main.transmission.oilTemperature` | K |
 | Alternator case temperature | `electrical.alternators.main.temperature` | K |
 
+Optional vibration monitoring uses documented HALMET vendor extension paths under `halmet.yanmar3gm30f.vibration.*` for diagnostics. These are intentionally not placed under standard `propulsion.main.*` branches.
+
 ## NMEA 2000 outputs
 
 | PGN | Name | Period | Source |
@@ -101,6 +104,7 @@ The project default environment is `halmet`.
 - [Architecture](docs/architecture.md)
 - [SensESP configuration](docs/sensesp_configuration.md)
 - [Signal K interface](docs/signalk.md)
+- [Vibration monitoring](docs/vibration.md)
 - [Signal K model inventory](sk-model/README.md)
 - [Signal K server plugin and GUI](signalk/README.md)
 - [NMEA 2000](docs/nmea2000.md)

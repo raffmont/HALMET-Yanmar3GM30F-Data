@@ -8,7 +8,11 @@ const DEFAULTS = {
   fuelCapacityLiters: 30,
   staleAfterSeconds: 10,
   enableDerivedTankRemaining: true,
-  enableDerivedDiagnostics: true
+  enableDerivedDiagnostics: true,
+  vibrationSensor: '',
+  vibrationMountLocation: '',
+  vibrationAxis: 'z',
+  vibrationMaxFrequencyHz: 250
 }
 
 const PATHS = {
@@ -23,7 +27,16 @@ const PATHS = {
   exhaustTemperature: (engineId) => `propulsion.${engineId}.exhaustTemperature`,
   transmissionOilTemperature: (engineId) =>
     `propulsion.${engineId}.transmission.oilTemperature`,
-  alternatorTemperature: 'electrical.alternators.main.temperature'
+  alternatorTemperature: 'electrical.alternators.main.temperature',
+  vibrationAccelerationRms: 'halmet.yanmar3gm30f.vibration.accelerationRms',
+  vibrationPeakAcceleration: 'halmet.yanmar3gm30f.vibration.peakAcceleration',
+  vibrationPeakFrequency: 'halmet.yanmar3gm30f.vibration.peakFrequency',
+  vibrationCrankOrderAmplitude: 'halmet.yanmar3gm30f.vibration.crankOrderAmplitude',
+  vibrationFiringOrderAmplitude: 'halmet.yanmar3gm30f.vibration.firingOrderAmplitude',
+  vibrationSampleRate: 'halmet.yanmar3gm30f.vibration.sampleRate',
+  vibrationFftSize: 'halmet.yanmar3gm30f.vibration.fftSize',
+  vibrationStatus: 'halmet.yanmar3gm30f.vibration.status',
+  vibrationSpectrum: 'halmet.yanmar3gm30f.vibration.spectrum'
 }
 
 function nowIso() {
@@ -51,6 +64,27 @@ function getValue(app, path) {
     return node.value
   }
   return undefined
+}
+
+function parseObject(value) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    try {
+      const parsed = JSON.parse(value)
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? parsed
+        : null
+    } catch (e) {
+      return null
+    }
+  }
+  return null
+}
+
+function finiteNumbers(values) {
+  return Array.isArray(values) ? values.filter(finiteNumber) : []
 }
 
 function makeDelta(values) {
@@ -122,6 +156,83 @@ function readStatus(app, settings) {
   }
 }
 
+function readVibration(app, settings) {
+  const engineId = settings.engineId || DEFAULTS.engineId
+  const revolutions = getValue(app, PATHS.revolutions(engineId))
+  const rpm = finiteNumber(revolutions) ? revolutions * 60 : null
+  const sampleRate = getValue(app, PATHS.vibrationSampleRate)
+  const fftSize = getValue(app, PATHS.vibrationFftSize)
+  const spectrum = parseObject(getValue(app, PATHS.vibrationSpectrum))
+  const spectrumSampleRate = spectrum ? spectrum.sampleRateHz : null
+  const spectrumFftSize = spectrum ? spectrum.fftSize : null
+  const effectiveSampleRate = finiteNumber(sampleRate) ? sampleRate : spectrumSampleRate
+  const effectiveFftSize = finiteNumber(fftSize) ? fftSize : spectrumFftSize
+  const binWidth =
+    finiteNumber(effectiveSampleRate) && finiteNumber(effectiveFftSize) && effectiveFftSize > 0
+      ? effectiveSampleRate / effectiveFftSize
+      : spectrum && finiteNumber(spectrum.binWidthHz)
+        ? spectrum.binWidthHz
+        : null
+  const magnitudes = spectrum ? finiteNumbers(spectrum.magnitudesMps2) : []
+  const spectrumFrequencies = spectrum ? finiteNumbers(spectrum.frequenciesHz) : []
+  const frequencies =
+    spectrumFrequencies.length > 0
+      ? spectrumFrequencies
+      : binWidth
+        ? magnitudes.map((_, index) => (index + 1) * binWidth)
+        : []
+  const maxFrequency =
+    spectrum && finiteNumber(spectrum.maxFrequencyHz)
+      ? spectrum.maxFrequencyHz
+      : finiteNumber(settings.vibrationMaxFrequencyHz)
+        ? settings.vibrationMaxFrequencyHz
+        : DEFAULTS.vibrationMaxFrequencyHz
+
+  const metrics = {
+    accelerationRmsMps2: getValue(app, PATHS.vibrationAccelerationRms),
+    peakAccelerationMps2: getValue(app, PATHS.vibrationPeakAcceleration),
+    peakFrequencyHz: getValue(app, PATHS.vibrationPeakFrequency),
+    crankOrderAmplitudeMps2: getValue(app, PATHS.vibrationCrankOrderAmplitude),
+    firingOrderAmplitudeMps2: getValue(app, PATHS.vibrationFiringOrderAmplitude),
+    status: getValue(app, PATHS.vibrationStatus)
+  }
+
+  return {
+    pluginId: PLUGIN_ID,
+    timestamp: nowIso(),
+    engineId,
+    paths: {
+      accelerationRms: PATHS.vibrationAccelerationRms,
+      peakAcceleration: PATHS.vibrationPeakAcceleration,
+      peakFrequency: PATHS.vibrationPeakFrequency,
+      crankOrderAmplitude: PATHS.vibrationCrankOrderAmplitude,
+      firingOrderAmplitude: PATHS.vibrationFiringOrderAmplitude,
+      sampleRate: PATHS.vibrationSampleRate,
+      fftSize: PATHS.vibrationFftSize,
+      status: PATHS.vibrationStatus,
+      spectrum: PATHS.vibrationSpectrum
+    },
+    vibration: {
+      available:
+        Object.values(metrics).some((value) => value !== undefined) || magnitudes.length > 0,
+      sensor: settings.vibrationSensor || null,
+      mountLocation: settings.vibrationMountLocation || null,
+      axis: (spectrum && spectrum.axis) || settings.vibrationAxis || DEFAULTS.vibrationAxis,
+      sampleRateHz: finiteNumber(effectiveSampleRate) ? effectiveSampleRate : null,
+      fftSize: finiteNumber(effectiveFftSize) ? effectiveFftSize : null,
+      binWidthHz: finiteNumber(binWidth) ? binWidth : null,
+      maxFrequencyHz: maxFrequency,
+      rpm,
+      crankFrequencyHz: finiteNumber(rpm) ? rpm / 60 : null,
+      firingFrequencyHz: finiteNumber(rpm) ? 1.5 * rpm / 60 : null,
+      ...metrics,
+      frequenciesHz: frequencies,
+      magnitudesMps2: magnitudes,
+      topPeaks: Array.isArray(spectrum && spectrum.topPeaks) ? spectrum.topPeaks : []
+    }
+  }
+}
+
 module.exports = function pluginFactory(app) {
   let interval = null
   let lastDerived = {}
@@ -171,6 +282,31 @@ module.exports = function pluginFactory(app) {
           type: 'boolean',
           title: 'Enable diagnostics API',
           default: DEFAULTS.enableDerivedDiagnostics
+        },
+        vibrationSensor: {
+          type: 'string',
+          title: 'Vibration sensor label',
+          default: DEFAULTS.vibrationSensor,
+          description: 'Optional display label, for example ICM-42688-P or MPU-6050.'
+        },
+        vibrationMountLocation: {
+          type: 'string',
+          title: 'Vibration sensor mount location',
+          default: DEFAULTS.vibrationMountLocation,
+          description:
+            'Optional display note, for example engine block side, middle cylinder area.'
+        },
+        vibrationAxis: {
+          type: 'string',
+          title: 'Primary vibration axis',
+          default: DEFAULTS.vibrationAxis,
+          enum: ['x', 'y', 'z', 'magnitude']
+        },
+        vibrationMaxFrequencyHz: {
+          type: 'number',
+          title: 'Vibration graph max frequency, Hz',
+          default: DEFAULTS.vibrationMaxFrequencyHz,
+          minimum: 1
         }
       }
     }),
@@ -242,6 +378,14 @@ module.exports = function pluginFactory(app) {
 
       router.get('/status', handler)
       router.get('/diagnostics', handler)
+      router.get('/vibration', (req, res) => {
+        const settings = plugin._settings || DEFAULTS
+        res.json(readVibration(app, settings))
+      })
+      router.get('/spectrum', (req, res) => {
+        const settings = plugin._settings || DEFAULTS
+        res.json(readVibration(app, settings))
+      })
     },
 
     getOpenApi: () => ({
@@ -261,6 +405,18 @@ module.exports = function pluginFactory(app) {
           get: {
             summary: 'Return diagnostic booleans for the configured data stream',
             responses: { '200': { description: 'Current plugin diagnostics' } }
+          }
+        },
+        '/vibration': {
+          get: {
+            summary: 'Return latest HALMET vibration metrics and reduced FFT spectrum',
+            responses: { '200': { description: 'Current vibration data' } }
+          }
+        },
+        '/spectrum': {
+          get: {
+            summary: 'Alias for /vibration for spectrum graph clients',
+            responses: { '200': { description: 'Current vibration spectrum data' } }
           }
         }
       }

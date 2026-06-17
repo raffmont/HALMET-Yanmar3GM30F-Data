@@ -25,6 +25,21 @@
     </section>
 
     <section>
+      <h2>Vibration</h2>
+      <section class="grid compact">
+        <article><span>Status</span><strong id="vibration-status">--</strong></article>
+        <article><span>RMS acceleration</span><strong id="vibration-rms">--</strong></article>
+        <article><span>Peak</span><strong id="vibration-peak">--</strong></article>
+        <article><span>Dominant frequency</span><strong id="vibration-frequency">--</strong></article>
+        <article><span>Crank order</span><strong id="vibration-crank">--</strong></article>
+        <article><span>Firing order</span><strong id="vibration-firing">--</strong></article>
+      </section>
+      <div class="plot-panel">
+        <canvas id="spectrum" width="960" height="320"></canvas>
+      </div>
+    </section>
+
+    <section>
       <h2>Diagnostics</h2>
       <pre id="diagnostics">Loading...</pre>
     </section>
