@@ -321,7 +321,7 @@ void update_onewire_temperatures() {
 void send_n2k_engine_rapid() {
   tN2kMsg msg;
   SetN2kEngineParamRapid(msg, N2K_ENGINE_INSTANCE, current_rpm, N2kDoubleNA,
-                         N2kDoubleNA);
+                         N2kInt8NA);
   nmea2000->SendMsg(msg);
 }
 

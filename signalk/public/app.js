@@ -26,7 +26,10 @@ async function refresh() {
     setText('rpm', fmt(d.rpm, ' rpm', 0))
     setText('state', v.state || '--')
     setText('fuel', fmt(d.fuelPercent, '%', 0))
-    setText('remaining', fmt(v.fuelRemaining ? v.fuelRemaining * 1000 : null, ' L', 1))
+    setText(
+      'remaining',
+      fmt(typeof v.fuelRemaining === 'number' ? v.fuelRemaining * 1000 : null, ' L', 1)
+    )
     setText('coolant', fmt(d.coolantCelsius, ' °C', 1))
     setText('oil', fmt(d.oilPressureBar, ' bar', 2))
     setText('alt', fmt(v.alternatorVoltage, ' V', 1))
