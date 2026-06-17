@@ -21,6 +21,7 @@
   "nmea2000": {
     "engine_rapid_update_pgn": 127488,
     "engine_dynamic_pgn": 127489,
+    "transmission_dynamic_pgn": 127493,
     "fluid_level_pgn": 127505
   }
 }

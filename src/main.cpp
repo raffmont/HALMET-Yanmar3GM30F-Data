@@ -1,6 +1,8 @@
 #include <Arduino.h>
+#include <WiFi.h>
 #include <Wire.h>
 #include <Adafruit_ADS1X15.h>
+#include <Adafruit_SSD1306.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <math.h>
@@ -22,6 +24,7 @@ using namespace halmet_yanmar;
 using namespace sensesp;
 
 Adafruit_ADS1115 ads;
+Adafruit_SSD1306 oled(OLED_WIDTH, OLED_HEIGHT, &Wire, OLED_RESET_PIN);
 OneWire one_wire(static_cast<uint8_t>(PIN_ONEWIRE));
 DallasTemperature temp_bus(&one_wire);
 tNMEA2000_esp32* nmea2000 = nullptr;
@@ -34,9 +37,11 @@ uint32_t last_publish_ms = 0;
 uint32_t last_onewire_ms = 0;
 uint32_t last_n2k_rapid_ms = 0;
 uint32_t last_n2k_dynamic_ms = 0;
+uint32_t last_n2k_transmission_ms = 0;
 uint32_t last_n2k_fluid_ms = 0;
 float current_rpm = 0.0f;
 bool ads_available = false;
+bool oled_available = false;
 bool n2k_available = false;
 
 float analog_values[sizeof(ANALOG_CHANNELS) / sizeof(ANALOG_CHANNELS[0])] = {};
@@ -267,6 +272,69 @@ void setup_outputs() {
   }
 }
 
+void setup_display() {
+  oled_available = oled.begin(SSD1306_SWITCHCAPVCC, OLED_I2C_ADDR);
+  if (!oled_available) {
+    Serial.println("SSD1306 display not found; local display disabled");
+    return;
+  }
+
+  oled.clearDisplay();
+  oled.setTextColor(SSD1306_WHITE);
+  oled.setTextSize(1);
+  oled.setCursor(0, 0);
+  oled.println(APP_NAME);
+  oled.println("Booting...");
+  oled.display();
+  Serial.println("SSD1306 display initialized");
+}
+
+String get_display_ip_address() {
+  if (WiFi.isConnected()) {
+    return WiFi.localIP().toString();
+  }
+
+  const wifi_mode_t wifi_mode = WiFi.getMode();
+  if (wifi_mode == WIFI_MODE_AP || wifi_mode == WIFI_MODE_APSTA) {
+    return WiFi.softAPIP().toString();
+  }
+
+  return String("--");
+}
+
+void update_display() {
+  if (!oled_available) {
+    return;
+  }
+
+  oled.clearDisplay();
+  oled.setTextColor(SSD1306_WHITE);
+  oled.setTextSize(1);
+  oled.setCursor(0, 0);
+  oled.println("Yanmar 3GM30F");
+  oled.printf("IP: %s\n", get_display_ip_address().c_str());
+  oled.printf("RPM: %.0f\n", current_rpm);
+  oled.printf("State: %s\n", current_rpm > 50.0f ? "started" : "stopped");
+  oled.printf("Oil:%d Temp:%d Alt:%d\n", digital_states[0].stable,
+              digital_states[1].stable, digital_states[2].stable);
+  oled.printf("SD20 seal: %s\n", digital_states[3].stable ? "ALARM" : "OK");
+
+  if (isfinite(analog_values[0])) {
+    oled.printf("Fuel: %.0f%%\n", analog_values[0] * 100.0f);
+  } else {
+    oled.println("Fuel: --");
+  }
+
+  if (isfinite(analog_values[1]) && isfinite(analog_values[2])) {
+    oled.printf("C:%.0fC O:%.1fbar\n", analog_values[1] - 273.15f,
+                analog_values[2] / 100000.0f);
+  } else {
+    oled.println("C:-- O:--");
+  }
+
+  oled.display();
+}
+
 void publish_outputs() {
   update_digital_inputs();
   update_rpm();
@@ -275,8 +343,8 @@ void publish_outputs() {
     engine_revolutions_hz_output->set(current_rpm / 60.0f);
   }
   if (engine_state_output != nullptr) {
-    engine_state_output->set((current_rpm > 50.0f || digital_states[3].stable) ?
-                             String("started") : String("stopped"));
+    engine_state_output->set((current_rpm > 50.0f) ? String("started")
+                                                   : String("stopped"));
   }
 
   for (size_t i = 0; i < sizeof(ANALOG_CHANNELS) / sizeof(ANALOG_CHANNELS[0]);
@@ -289,9 +357,10 @@ void publish_outputs() {
     }
   }
 
-  Serial.printf("rpm=%.1f d1_low_oil=%d d2_high_temp=%d d3_charge=%d d4_aux=%d\n",
+  Serial.printf("rpm=%.1f d1_low_oil=%d d2_high_temp=%d d3_charge=%d d4_sd20_seal=%d\n",
                 current_rpm, digital_states[0].stable, digital_states[1].stable,
                 digital_states[2].stable, digital_states[3].stable);
+  update_display();
 }
 
 void update_onewire_temperatures() {
@@ -348,6 +417,21 @@ void send_n2k_engine_dynamic() {
   nmea2000->SendMsg(msg);
 }
 
+void send_n2k_transmission_dynamic() {
+  const bool sd20_seal_alarm = digital_states[3].stable;
+  const double transmission_oil_temp_k =
+      (temp_output_count > 2 && isfinite(temp_outputs[2].kelvin))
+          ? temp_outputs[2].kelvin
+          : N2kDoubleNA;
+
+  tN2kMsg msg;
+  SetN2kTransmissionParameters(msg, N2K_ENGINE_INSTANCE, N2kTG_Unknown,
+                               N2kDoubleNA, transmission_oil_temp_k,
+                               sd20_seal_alarm, false, false, false,
+                               sd20_seal_alarm);
+  nmea2000->SendMsg(msg);
+}
+
 void send_n2k_fluid_level() {
   const double tank_level_pct = isfinite(analog_values[0]) ? 100.0 * analog_values[0] : N2kDoubleNA;
   tN2kMsg msg;
@@ -369,6 +453,11 @@ void update_nmea2000() {
   if (now - last_n2k_dynamic_ms >= nmea2000_mapping::kEngineDynamicPeriodMs) {
     last_n2k_dynamic_ms = now;
     send_n2k_engine_dynamic();
+  }
+  if (now - last_n2k_transmission_ms >=
+      nmea2000_mapping::kTransmissionDynamicPeriodMs) {
+    last_n2k_transmission_ms = now;
+    send_n2k_transmission_dynamic();
   }
   if (now - last_n2k_fluid_ms >= nmea2000_mapping::kFluidLevelPeriodMs) {
     last_n2k_fluid_ms = now;
@@ -396,6 +485,7 @@ void setup() {
   }
 
   Wire.begin(static_cast<int>(PIN_I2C_SDA), static_cast<int>(PIN_I2C_SCL));
+  setup_display();
   ads_available = ads.begin(ADS1115_ADDR, &Wire);
   if (ads_available) {
     ads.setGain(GAIN_ONE);

@@ -7,11 +7,12 @@ SensESP provides onboarding, OTA, configuration, Signal K integration, and the c
 ## Features
 
 - Flywheel RPM sensing on external optocoupler input `GPIO17`.
-- D1-D4 Yanmar type-B panel taps for oil-pressure, coolant-temperature, charge-lamp, and auxiliary/key-on state.
+- D1-D4 Yanmar type-B panel taps for oil-pressure, coolant-temperature, charge-lamp, and SD20 sail drive seal alarm state.
 - A1-A4 HALMET isolated analog inputs for fuel level, coolant temperature, oil pressure, and alternator voltage.
 - 1-Wire DS18B20 temperature probes with deterministic path mapping by ROM ID or sensor order.
+- Local SSD1306 OLED status display with RPM, alarms, sensor values, and current Wi-Fi/AP IP address.
 - Schema-valid Signal K outputs with SI units.
-- NMEA 2000 PGNs `127488`, `127489`, and `127505`.
+- NMEA 2000 PGNs `127488`, `127489`, `127493`, and `127505`.
 - PlatformIO `halmet` default environment using pioarduino and SensESP.
 - Documentation split into getting-started, architecture, configuration, Signal K, NMEA 2000, hardware, safety, and commissioning files.
 
@@ -60,12 +61,13 @@ The project default environment is `halmet`.
 | Oil pressure panel warning | D1 / `GPIO23` |
 | Coolant temperature panel warning | D2 / `GPIO25` |
 | Alternator charge warning lamp | D3 / `GPIO27` |
-| Key-on / buzzer / spare panel signal | D4 / `GPIO26` |
+| SD20 sail drive seal switch alarm | D4 / `GPIO26` |
 | Fuel level | A1 / ADS1115 channel 0 |
 | Coolant temperature sender | A2 / ADS1115 channel 1 |
 | Oil pressure sender | A3 / ADS1115 channel 2 |
 | Alternator / charge voltage | A4 / ADS1115 channel 3 |
 | I2C SDA/SCL | `GPIO21` / `GPIO22` |
+| SSD1306 OLED display | I2C `0x3c`, 128x64, no reset pin |
 | NMEA 2000 CAN TX/RX | `GPIO19` / `GPIO18` |
 | 1-Wire temperature bus | `GPIO4`, verify on board revision |
 
@@ -90,6 +92,7 @@ The project default environment is `halmet`.
 | ---: | --- | ---: | --- |
 | 127488 | Engine Parameters, Rapid Update | 100 ms | Flywheel RPM on `GPIO17` |
 | 127489 | Engine Parameters, Dynamic | 500 ms | A2 coolant temperature, A3 oil pressure, A4 alternator voltage, D1-D3 status bits |
+| 127493 | Transmission Parameters, Dynamic | 500 ms | D4 SD20 sail drive seal alarm status and 1-Wire transmission oil/case temperature when available |
 | 127505 | Fluid Level | 2500 ms | A1 fuel tank level |
 
 ## Documentation
@@ -111,4 +114,4 @@ This firmware is for monitoring and data acquisition. It must not replace the Ya
 
 ## Credits
 
-Uses SensESP, the NMEA2000 library, NMEA2000_twai, Adafruit ADS1X15, OneWire, and DallasTemperature.
+Uses SensESP, the NMEA2000 library, NMEA2000_twai, Adafruit ADS1X15, Adafruit SSD1306, OneWire, and DallasTemperature.

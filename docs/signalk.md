@@ -7,7 +7,7 @@ The firmware publishes only schema-valid Signal K paths. Engine-panel warning la
 | Source | Signal K path | Units | Notes |
 | --- | --- | ---: | --- |
 | Flywheel optocoupler on GPIO17 | `propulsion.main.revolutions` | Hz | Signal K uses revolutions per second. RPM is `value * 60`. |
-| Derived from RPM and/or D4 | `propulsion.main.state` | enum | `started` when RPM is detected or D4 is active, otherwise `stopped`. |
+| Derived from RPM | `propulsion.main.state` | enum | `started` when RPM is detected, otherwise `stopped`. |
 | A1 | `tanks.fuel.main.currentLevel` | ratio | Fuel level, 0.0 to 1.0. |
 | A2 | `propulsion.main.coolantTemperature` | K | Calibrated coolant temperature. |
 | A3 | `propulsion.main.oilPressure` | Pa | Calibrated oil pressure. |

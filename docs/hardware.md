@@ -23,7 +23,7 @@ Use insulated piggyback crimps, a service connector breakout, or a reversible ha
 | D1 | Oil pressure warning | PGN 127489 Engine Status 1 `LowOilPressure` |
 | D2 | Coolant temperature warning | PGN 127489 Engine Status 1 `OverTemperature` |
 | D3 | Alternator charge lamp | PGN 127489 Engine Status 1 `ChargeIndicator` |
-| D4 | Aux/key-on/spare | Local engine-state assist only |
+| D4 | SD20 sail drive seal switch alarm | PGN 127493 Transmission Status `Check` and `SailDrive` |
 
 The code treats all four as active-low by default. Measure every wire in key-off, key-on, pre-start, running, and alarm-test conditions before relying on the mapping.
 
@@ -43,3 +43,9 @@ Use passive voltage measurement when tapping an existing gauge/sender circuit. U
 Connect waterproof DS18B20-style probes to the HALMET 1-Wire header. For stable naming, enter each sensor ROM ID in `TEMPERATURE_CHANNEL_HINTS` in `include/yanmar_config.h`.
 
 Surface-mounted DS18B20 probes are useful trend sensors, not replacements for the Yanmar overtemperature alarm or shutdown protection.
+
+## SSD1306 OLED display
+
+The firmware initializes a 128x64 SSD1306 OLED on the HALMET I2C bus at address `0x3c` with no reset pin. The display shows a boot page, then refreshes once per Signal K publish interval with RPM, engine state, D1-D3 warning states, SD20 seal alarm state, fuel, coolant, oil pressure, and the current Wi-Fi station or provisioning AP IP address.
+
+If the serial log reports `SSD1306 display not found; local display disabled`, check the I2C wiring, display power, and whether the module uses address `0x3d`.

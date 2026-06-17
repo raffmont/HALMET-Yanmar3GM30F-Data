@@ -21,6 +21,10 @@ static constexpr const char* MODEL_VERSION = "0.3";
 // HALMET peripheral configuration
 // -----------------------------------------------------------------------------
 static constexpr uint8_t ADS1115_ADDR = 0x4b;
+static constexpr uint8_t OLED_I2C_ADDR = 0x3c;
+static constexpr int OLED_WIDTH = 128;
+static constexpr int OLED_HEIGHT = 64;
+static constexpr int OLED_RESET_PIN = -1;
 
 // -----------------------------------------------------------------------------
 // Sampling and filtering
@@ -70,8 +74,8 @@ static constexpr DigitalChannelConfig DIGITAL_CHANNELS[] = {
      "Yanmar panel high coolant temperature warning input"},
     {PIN_D3, "charge_indicator",
      "Yanmar panel alternator charge warning lamp input"},
-    {PIN_D4, "key_or_aux",
-     "Configurable type-B panel signal: key-on, buzzer, start, or spare"},
+    {PIN_D4, "sd20_saildrive_seal_alarm",
+     "Yanmar SD20 sail drive seal switch alarm input"},
 };
 
 struct AnalogChannelConfig {
