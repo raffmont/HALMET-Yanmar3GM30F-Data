@@ -1,0 +1,26 @@
+{
+  "name": "signalk-halmet-yanmar3gm30f-data",
+  "version": "0.1.0",
+  "description": "Signal K server plugin and web GUI for HALMET Yanmar 3GM30F engine data, derived values, and diagnostics.",
+  "main": "plugin/index.js",
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-webapp",
+    "signalk-embeddable-webapp",
+    "signalk-category-engine",
+    "signalk-category-diagnostics"
+  ],
+  "signalk-plugin-enabled-by-default": false,
+  "signalk": {
+    "displayName": "HALMET Yanmar 3GM30F Data",
+    "appIcon": "./assets/icon.svg"
+  },
+  "scripts": {
+    "lint": "node --check plugin/index.js",
+    "test": "npm run lint"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "Apache-2.0"
+}

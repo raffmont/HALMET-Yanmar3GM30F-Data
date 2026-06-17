@@ -1,0 +1,26 @@
+{
+  "propulsion": {
+    "engine": "propulsion.main",
+    "revolutions": "propulsion.main.revolutions",
+    "state": "propulsion.main.state",
+    "coolant_temperature": "propulsion.main.coolantTemperature",
+    "oil_pressure": "propulsion.main.oilPressure",
+    "alternator_voltage": "propulsion.main.alternatorVoltage",
+    "exhaust_temperature": "propulsion.main.exhaustTemperature",
+    "transmission_oil_temperature": "propulsion.main.transmission.oilTemperature"
+  },
+  "tanks": {
+    "fuel_level": "tanks.fuel.main.currentLevel"
+  },
+  "environment": {
+    "engine_room_temperature": "environment.inside.engineRoom.temperature"
+  },
+  "electrical": {
+    "alternator_temperature": "electrical.alternators.main.temperature"
+  },
+  "nmea2000": {
+    "engine_rapid_update_pgn": 127488,
+    "engine_dynamic_pgn": 127489,
+    "fluid_level_pgn": 127505
+  }
+}
