@@ -249,6 +249,9 @@ void discover_onewire_temperatures() {
     temp_outputs[i].output = new SKOutput<float>(
         temp_outputs[i].sk_path.c_str(), temp_outputs[i].config_path.c_str(),
         new SKMetadata("K", temp_outputs[i].description.c_str()));
+    ConfigItem(temp_outputs[i].output)
+        ->set_title(temp_outputs[i].description)
+        ->set_sort_order(1200 + static_cast<int>(i));
 
     Serial.printf("1-Wire sensor %u: %s -> %s\n", static_cast<unsigned>(i + 1),
                   rom_id.c_str(), temp_outputs[i].sk_path.c_str());
@@ -259,16 +262,25 @@ void setup_outputs() {
   engine_revolutions_hz_output = new SKOutput<float>(
       signalk_paths::kEngineRevolutions, "/Yanmar3GM30F/RPM/Revolutions",
       new SKMetadata("Hz", "Yanmar 3GM30F crankshaft revolutions per second"));
+  ConfigItem(engine_revolutions_hz_output)
+      ->set_title("Engine RPM Signal K path")
+      ->set_sort_order(1000);
 
   engine_state_output = new SKOutput<String>(
       signalk_paths::kEngineState, "/Yanmar3GM30F/Engine/State",
       new SKMetadata("", "Yanmar 3GM30F engine state"));
+  ConfigItem(engine_state_output)
+      ->set_title("Engine state Signal K path")
+      ->set_sort_order(1001);
 
   for (size_t i = 0; i < sizeof(ANALOG_CHANNELS) / sizeof(ANALOG_CHANNELS[0]);
        i++) {
     analog_outputs[i] = new SKOutput<float>(
         ANALOG_CHANNELS[i].sk_path, ANALOG_CHANNELS[i].config_path,
         new SKMetadata(ANALOG_CHANNELS[i].units, ANALOG_CHANNELS[i].description));
+    ConfigItem(analog_outputs[i])
+        ->set_title(String(ANALOG_CHANNELS[i].description) + " Signal K path")
+        ->set_sort_order(1100 + static_cast<int>(i));
   }
 }
 

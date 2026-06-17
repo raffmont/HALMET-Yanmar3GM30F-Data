@@ -11,9 +11,11 @@ Configured in `include/yanmar_config.h`:
 - `MODEL_ID`: `HALMET-Yanmar3GM30F-Data`
 - `SOFTWARE_VERSION`: firmware version string
 
-## Configuration paths
+## Configuration panel
 
-The firmware currently creates Signal K output configuration paths under:
+The firmware registers the Signal K output paths below as SensESP configuration
+items. They appear in the device web UI under the Signal K/SensESP
+configuration panel and can be edited without recompiling:
 
 ```text
 /Yanmar3GM30F/RPM/Revolutions
@@ -25,4 +27,5 @@ The firmware currently creates Signal K output configuration paths under:
 /Yanmar3GM30F/1Wire/<Signal K path>
 ```
 
-Calibration constants remain in `include/yanmar_config.h`. A future step can promote selected calibration values to persistent SensESP configurable items.
+Calibration constants remain in `include/yanmar_config.h`. A future step can
+promote selected calibration values to persistent SensESP configurable items.

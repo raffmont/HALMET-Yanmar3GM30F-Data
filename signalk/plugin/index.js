@@ -15,6 +15,74 @@ const DEFAULTS = {
   vibrationMaxFrequencyHz: 250
 }
 
+const CONFIG_SCHEMA = {
+  type: 'object',
+  required: [],
+  properties: {
+    engineId: {
+      type: 'string',
+      title: 'Engine id',
+      default: DEFAULTS.engineId,
+      description: 'Signal K propulsion id, for example main in propulsion.main.*'
+    },
+    fuelTankId: {
+      type: 'string',
+      title: 'Fuel tank id',
+      default: DEFAULTS.fuelTankId,
+      description: 'Signal K fuel tank id, for example main in tanks.fuel.main.*'
+    },
+    fuelCapacityLiters: {
+      type: 'number',
+      title: 'Fuel capacity, liters',
+      default: DEFAULTS.fuelCapacityLiters,
+      minimum: 0,
+      description:
+        'Used to derive tanks.fuel.<id>.remaining from currentLevel. Set 0 to disable remaining calculation.'
+    },
+    staleAfterSeconds: {
+      type: 'number',
+      title: 'Diagnostic stale threshold, seconds',
+      default: DEFAULTS.staleAfterSeconds,
+      minimum: 1
+    },
+    enableDerivedTankRemaining: {
+      type: 'boolean',
+      title: 'Publish derived fuel remaining',
+      default: DEFAULTS.enableDerivedTankRemaining
+    },
+    enableDerivedDiagnostics: {
+      type: 'boolean',
+      title: 'Enable diagnostics API',
+      default: DEFAULTS.enableDerivedDiagnostics
+    },
+    vibrationSensor: {
+      type: 'string',
+      title: 'Vibration sensor label',
+      default: DEFAULTS.vibrationSensor,
+      description: 'Optional display label, for example ICM-42688-P or MPU-6050.'
+    },
+    vibrationMountLocation: {
+      type: 'string',
+      title: 'Vibration sensor mount location',
+      default: DEFAULTS.vibrationMountLocation,
+      description:
+        'Optional display note, for example engine block side, middle cylinder area.'
+    },
+    vibrationAxis: {
+      type: 'string',
+      title: 'Primary vibration axis',
+      default: DEFAULTS.vibrationAxis,
+      enum: ['x', 'y', 'z', 'magnitude']
+    },
+    vibrationMaxFrequencyHz: {
+      type: 'number',
+      title: 'Vibration graph max frequency, Hz',
+      default: DEFAULTS.vibrationMaxFrequencyHz,
+      minimum: 1
+    }
+  }
+}
+
 const PATHS = {
   revolutions: (engineId) => `propulsion.${engineId}.revolutions`,
   state: (engineId) => `propulsion.${engineId}.state`,
@@ -243,73 +311,7 @@ module.exports = function pluginFactory(app) {
     description:
       'Web GUI, derived tank data, and diagnostics for HALMET Yanmar 3GM30F Signal K streams.',
 
-    schema: () => ({
-      type: 'object',
-      required: [],
-      properties: {
-        engineId: {
-          type: 'string',
-          title: 'Engine id',
-          default: DEFAULTS.engineId,
-          description: 'Signal K propulsion id, for example main in propulsion.main.*'
-        },
-        fuelTankId: {
-          type: 'string',
-          title: 'Fuel tank id',
-          default: DEFAULTS.fuelTankId,
-          description: 'Signal K fuel tank id, for example main in tanks.fuel.main.*'
-        },
-        fuelCapacityLiters: {
-          type: 'number',
-          title: 'Fuel capacity, liters',
-          default: DEFAULTS.fuelCapacityLiters,
-          minimum: 0,
-          description:
-            'Used to derive tanks.fuel.<id>.remaining from currentLevel. Set 0 to disable remaining calculation.'
-        },
-        staleAfterSeconds: {
-          type: 'number',
-          title: 'Diagnostic stale threshold, seconds',
-          default: DEFAULTS.staleAfterSeconds,
-          minimum: 1
-        },
-        enableDerivedTankRemaining: {
-          type: 'boolean',
-          title: 'Publish derived fuel remaining',
-          default: DEFAULTS.enableDerivedTankRemaining
-        },
-        enableDerivedDiagnostics: {
-          type: 'boolean',
-          title: 'Enable diagnostics API',
-          default: DEFAULTS.enableDerivedDiagnostics
-        },
-        vibrationSensor: {
-          type: 'string',
-          title: 'Vibration sensor label',
-          default: DEFAULTS.vibrationSensor,
-          description: 'Optional display label, for example ICM-42688-P or MPU-6050.'
-        },
-        vibrationMountLocation: {
-          type: 'string',
-          title: 'Vibration sensor mount location',
-          default: DEFAULTS.vibrationMountLocation,
-          description:
-            'Optional display note, for example engine block side, middle cylinder area.'
-        },
-        vibrationAxis: {
-          type: 'string',
-          title: 'Primary vibration axis',
-          default: DEFAULTS.vibrationAxis,
-          enum: ['x', 'y', 'z', 'magnitude']
-        },
-        vibrationMaxFrequencyHz: {
-          type: 'number',
-          title: 'Vibration graph max frequency, Hz',
-          default: DEFAULTS.vibrationMaxFrequencyHz,
-          minimum: 1
-        }
-      }
-    }),
+    schema: CONFIG_SCHEMA,
 
     start: (configuration) => {
       const settings = { ...DEFAULTS, ...(configuration || {}) }
